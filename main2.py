@@ -6,10 +6,13 @@ from torch.utils.data import DataLoader
 from torch import nn
 import torch.nn.functional as F
 
+list = []
+
 # Define the CNN model class
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
+        self.conv1featuremap = []
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1)
         self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1)
         self.dropout1 = nn.Dropout(0.25)
@@ -18,8 +21,10 @@ class CNN(nn.Module):
         self.fc1 = nn.Linear(in_features=9216, out_features=128)
         self.fc2 = nn.Linear(in_features=128, out_features=10)
 
+
     def forward(self, x):
         x = self.conv1(x)
+        self.conv1featuremap.append(x)
         x = F.relu(x)
         x = self.conv2(x)
         x = F.relu(x)
@@ -94,3 +99,40 @@ criterion = nn.CrossEntropyLoss()
 
 # Test the loaded model and visualize the results
 test_and_visualize(cnn_loaded, device, test_loader, criterion)
+
+model_weights = []
+conv_layers = []
+
+"""
+model_childs = list(cnn_loaded.children())
+counter = 0
+
+for i in range(len(model_childs)):
+    if type(model_childs[i] == nn.Conv2d):
+        counter += 1
+        model_weights.append(model_childs[i].weight)
+        conv_layers.append(model_childs[i])
+
+
+print(f"total conv layers: {counter}")
+print(f"conv layers: {conv_layers}")
+
+
+feature_maps = {}
+def hook_fn(m, i, o):
+    feature_maps[m] = o
+"""
+
+print(cnn_loaded.conv1featuremap[0])
+print(cnn_loaded.conv1featuremap[0].size())
+
+feature_map = cnn_loaded.conv1featuremap[0][0].cpu()
+
+fig, axes = plt.subplots(4, 8, figsize=(15,8))
+axes = axes.flatten()
+for i in range(feature_map.shape[0]):
+    ax = axes[i]
+    ax.imshow(feature_map[i], cmap='gray')
+    ax.axis('off')
+plt.tight_layout()
+plt.show()
